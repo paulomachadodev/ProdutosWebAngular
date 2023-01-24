@@ -1,0 +1,74 @@
+import { Component } from '@angular/core';
+import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { environment } from 'src/environments/environment';
+import { HttpClient } from '@angular/common/http';
+import { NgxSpinnerService } from "ngx-spinner";
+ 
+@Component({
+  selector: 'app-acessar-conta',
+  templateUrl: './acessar-conta.component.html',
+  styleUrls: ['./acessar-conta.component.css']
+})
+export class AcessarContaComponent {
+ 
+  //atributos
+  mensagem_erro: string = '';
+ 
+  //construtor
+  constructor(
+    private httpClient: HttpClient,
+    private spinnerService: NgxSpinnerService
+  ) {
+ 
+  }
+ 
+  //criando a estrutura do formulário
+  formLogin = new FormGroup({
+    //campo 'email'  
+    email: new FormControl('',
+      [Validators.required, Validators.email]),
+    //campo 'senha'
+    senha: new FormControl('',
+      [Validators.required, Validators.minLength(8), Validators.maxLength(20)]),
+  });
+ 
+  //função auxiliar para exibir as mensagens de validação
+  get form(): any {
+    return this.formLogin.controls;
+  }
+ 
+  //função executada pelo SUBMIT do formulario
+  onSubmit(): void {
+ 
+    this.spinnerService.show();
+ 
+    //limpando as mensagens
+    this.mensagem_erro = '';
+ 
+    //fazendo a requisição para a API
+    this.httpClient.post(
+      environment.apiUsuarios + 'api/login', //ENDPOINT do serviço
+      this.formLogin.value
+    )
+      .subscribe({
+        next: (data: any) => { //resposta de sucesso da API
+ 
+          //salvando os dados do usuário autenticado na memória do navegador
+          localStorage.setItem('dados-usuario', JSON.stringify(data));
+ 
+          this.formLogin.reset(); //limpando o formulário
+         
+          //redirecionar o usuário para a página de gerenciar produtos
+          window.location.href = '/gerenciar-produtos';          
+        },
+        error: (e) => { //resposta de erro da API
+          this.mensagem_erro = e.error.mensagem; //exibindo a mensagem
+        }
+      }).add(
+        () => this.spinnerService.hide()
+      );
+  }
+}
+ 
+
+
